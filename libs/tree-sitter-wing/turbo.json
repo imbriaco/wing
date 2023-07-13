@@ -9,7 +9,7 @@
     "compile:wasm": {
       "dependsOn": ["compile:generate"],
       "inputs": ["src/**", "bindings/**", "binding.gyp"],
-      "outputs": ["tree-sitter-dsl.d.ts", "tree-sitter-wing.wasm"]
+      "outputs": ["tree-sitter-wing.wasm"]
     },
     "compile": {
       "dependsOn": ["compile:wasm"]

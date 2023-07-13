@@ -1,3 +1,4 @@
 /bindings/
-/src/
+/src/*
+!/src/scanner.c
 /binding.gyp
