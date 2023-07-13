@@ -14,6 +14,10 @@
     },
     "eslint": {
       "outputs": []
+    },
+    "package": {
+      "dependsOn": ["compile"],
+      "cache": false
     }
   }
 }
