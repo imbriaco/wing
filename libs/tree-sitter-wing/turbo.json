@@ -1,0 +1,9 @@
+{
+  "extends": ["//"],
+  "pipeline": {
+    "build:generate": {
+      "outputs": ["bindings/**"]
+    },
+    "build:wasm": {}
+  }
+}
