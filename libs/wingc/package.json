@@ -8,6 +8,7 @@
     "lint": "cargo fmt && cargo clippy --fix --no-deps --allow-dirty --target wasm32-wasi --release"
   },
   "devDependencies": {
+    "@winglang/tree-sitter-wing": "workspace:^",
     "@winglang/wingii": "workspace:^"
   }
 }
