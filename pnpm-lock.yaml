@@ -1003,7 +1003,7 @@ importers:
   libs/wingc:
     devDependencies:
       '@winglang/tree-sitter-wing':
-        specifier: link:../tree-sitter-wing
+        specifier: workspace:^
         version: link:../tree-sitter-wing
       '@winglang/wingii':
         specifier: workspace:^

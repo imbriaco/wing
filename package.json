@@ -8,8 +8,9 @@
     "turbo": "^1.10.7"
   },
   "scripts": {
-    "build": "nx run-many --all --targets build,test,package",
-    "test": "nx run-many --all --target=test",
+    "compile": "turbo compile",
+    "build": "turbo compile test package",
+    "test": "turbo test",
     "package": "nx run-many --all --target=package",
     "build:ci": "nx run-many --targets lint,build --all --configuration=release --output-style=stream --verbose",
     "test:ci": "nx run-many --exclude=hangar --target=test --all --configuration=release --output-style=stream --verbose",

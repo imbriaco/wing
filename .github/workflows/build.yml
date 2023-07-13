@@ -130,9 +130,9 @@ jobs:
           name: wingc
           path: target/wasm32-wasi/release/wingc.wasm
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        id: setSHAs
-        uses: nrwl/nx-set-shas@v3
+      # - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      #   id: setSHAs
+      #   uses: nrwl/nx-set-shas@v3
 
       - name: Check git diff of VSCode Extension
         id: git-diff-vscode-wing
@@ -249,7 +249,7 @@ jobs:
         uses: pnpm/action-setup@v2.2.4
         with:
           version: ${{ env.PNPM_VERSION }}
-        
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
