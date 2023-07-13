@@ -1,6 +1,0 @@
-[workspace]
-members = [
-  "libs/tree-sitter-wing",
-  "libs/wingc",
-  "libs/wingii",
-]

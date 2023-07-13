@@ -4,8 +4,8 @@
     "@nrwl/devkit": "16.5.0",
     "bump-pack": "workspace:^",
     "changelogen": "^0.5.3",
-    "nx": "16.5.0",
-    "semver": "^7.3.8"
+    "semver": "^7.3.8",
+    "turbo": "^1.10.7"
   },
   "scripts": {
     "build": "nx run-many --all --targets build,test,package",
@@ -31,8 +31,7 @@
       "jsii@5.0.11": "patches/jsii@5.0.11.patch",
       "esbuild-wasm@0.18.5": "patches/esbuild-wasm@0.18.5.patch",
       "@aws-sdk/util-utf8-node@3.259.0": "patches/@aws-sdk__util-utf8-node@3.259.0.patch",
-      "@aws-sdk/util-utf8-browser@3.259.0": "patches/@aws-sdk__util-utf8-browser@3.259.0.patch",
-      "nx@16.5.0": "patches/nx@16.5.0.patch"
+      "@aws-sdk/util-utf8-browser@3.259.0": "patches/@aws-sdk__util-utf8-browser@3.259.0.patch"
     }
   }
 }
