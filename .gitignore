@@ -5,6 +5,7 @@ node_modules/
 *.tfstate.*
 
 # Generated wing output
+**/target/**/*.w.out/
 **/target/*.wsim
 **/target/*.wsim.*/
 
