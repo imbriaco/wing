@@ -3,5 +3,5 @@
 /src/test_corpus/*
 /__snapshots__/**/proc.*/
 /.npmrc
-/nohup.our
+/nohup.out
 /nohup.err
