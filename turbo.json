@@ -12,6 +12,10 @@
     "test": {
       "cache": false
     },
+    "post-compile": {},
+    "lint": {
+      "outputs": []
+    },
     "eslint": {
       "outputs": []
     },

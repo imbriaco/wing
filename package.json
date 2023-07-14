@@ -1,5 +1,6 @@
 {
-  "name": "monowingo",
+  "name": "@winglang/monorepo",
+  "private": true,
   "devDependencies": {
     "@nrwl/devkit": "16.5.0",
     "bump-pack": "workspace:^",
@@ -9,8 +10,8 @@
   },
   "scripts": {
     "compile": "turbo compile",
-    "build": "turbo compile post-compile test package",
-    "test": "turbo test",
+    "build": "turbo compile post-compile lint eslint test package --filter=!hangar",
+    "test": "turbo test --filter=!hangar",
     "package": "turbo run package",
     "docs": "./scripts/docsite.sh",
     "changelog": "bump-pack",

@@ -3,7 +3,8 @@
   "extends": ["//"],
   "pipeline": {
     "pre-compile": {
-      "cache": false
+      "inputs": ["cdktf.json"],
+      "outputs": ["src/.gen/**"]
     },
     "compile": {
       "dependsOn": ["pre-compile"],

@@ -3,6 +3,9 @@
   "pipeline": {
     "compile": {
       "outputs": ["lib/**"]
+    },
+    "package": {
+      "outputs": ["vscode-wing.vsix"]
     }
   }
 }
