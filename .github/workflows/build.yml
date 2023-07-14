@@ -207,7 +207,7 @@ jobs:
         working-directory: tools/hangar
 
       - name: Publish tarballs to verdaccio registry
-        run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --access public ; done
+        run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --no-git-checks --access public ; done
         working-directory: tools/hangar
 
   quality-gate:
