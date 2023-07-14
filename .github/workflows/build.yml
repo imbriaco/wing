@@ -174,202 +174,41 @@ jobs:
     needs:
       - build
     steps:
-      - run: echo "skip"
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
 
-  # unit-tests:
-  #   name: "Unit Tests"
-  #   timeout-minutes: 30
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     # Testing runs out of memory without this
-  #     NODE_OPTIONS: "--max-old-space-size=4096"
-  #     CARGO_TERM_COLOR: always
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-  #       with:
-  #         fetch-depth: 1
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
-  #     - name: Setup pnpm
-  #       uses: pnpm/action-setup@v2.2.4
-  #       with:
-  #         version: ${{ env.PNPM_VERSION }}
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: "pnpm"
+          node-version: ${{ env.NODE_VERSION }}
 
-  #     - name: Setup Node
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         cache: "pnpm"
-  #         node-version: ${{ env.NODE_VERSION }}
+      - name: Download tarballs
+        uses: actions/download-artifact@v3
+        with:
+          name: tarballs
 
-  #     - name: Install Rust
-  #       uses: dtolnay/rust-toolchain@master
-  #       with:
-  #         toolchain: ${{ env.RUST_VERSION }}
-  #         targets: |
-  #           x86_64-unknown-linux-gnu
-  #           wasm32-wasi
-  #         components: rustfmt,clippy,rust-std
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile --filter hangar
 
-  #     - name: Setup Cargo Cache
-  #       uses: Swatinem/rust-cache@v2
+      - name: Starting the verdaccio registry
+        run: nohup pnpm verdaccio
+        working-directory: tools/hangar
 
-  #     - name: Install Dependencies
-  #       run: pnpm install --frozen-lockfile
+      - name: Login to verdaccio registry
+        run: pnpm npm-auth-to-token -u test -p test -e test@test.com -r http://localhost:4873/
+        working-directory: tools/hangar
 
-  #     - name: Test
-  #       run: pnpm test:ci
-
-  #     - uses: actions/upload-artifact@v3
-  #       if: always()
-  #       with:
-  #         name: playwright-report
-  #         path: apps/wing-console/console/app/playwright-report/
-  #         retention-days: 30
-
-  #     - name: Create git patch
-  #       id: diff
-  #       run: |
-  #         git add --all
-  #         git diff --staged --binary --patch > build.diff
-  #         if [ -s build.diff ]; then
-  #           echo "Diff found, creating a patch to apply later"
-  #           cat build.diff
-  #           echo "diff=true" >> $GITHUB_OUTPUT
-  #         fi
-  #     - name: Upload Diff
-  #       if: steps.diff.outputs.diff == 'true'
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: build.diff
-  #         path: build.diff
-
-  # benchmarks:
-  #   name: E2E Benchmarks
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - build
-  #   env:
-  #     HANGAR_WING_SPEC: "file:${{ github.workspace }}/wing/winglang-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCONSOLE_APP_SPEC: "file:${{ github.workspace }}/wingconsoleapp/wingconsole-app-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCONSOLE_SERVER_SPEC: "file:${{ github.workspace }}/wingconsoleserver/wingconsole-server-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCONSOLE_DESIGN_SYSTEM_SPEC: "file:${{ github.workspace }}/wingconsoledesignsystem/wingconsole-design-system-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCONSOLE_UI_SPEC: "file:${{ github.workspace }}/wingconsoleui/wingconsole-ui-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCOMPILER_SPEC: "file:${{ github.workspace }}/wingcompiler/winglang-compiler-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGSDK_SPEC: "file:${{ github.workspace }}/wingsdk/winglang-sdk-${{ needs.build.outputs.version }}.tgz"
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-
-  #     - name: Download Build Artifacts
-  #       uses: actions/download-artifact@v2
-
-  #     - name: Setup pnpm
-  #       uses: pnpm/action-setup@v2.2.4
-  #       with:
-  #         version: ${{ env.PNPM_VERSION }}
-
-  #     - name: Setup Node
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         cache: "pnpm"
-  #         node-version: ${{ env.NODE_VERSION }}
-
-  #     - name: Install Dependencies
-  #       run: pnpm install --ignore-scripts --frozen-lockfile --filter hangar --filter examples-valid --filter examples-invalid
-
-  #     - name: Run E2E Benchmarks
-  #       working-directory: tools/hangar
-  #       run: pnpm bench
-
-  #     - name: Upload Report JSON
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: benchmarks
-  #         path: tools/hangar/results/report.json
-
-  #     - name: Create Markdown report
-  #       run: node scripts/benchmark_json_to_table.mjs
-
-  # e2e:
-  #   name: "E2E / ${{ matrix.runner }} + Node${{ matrix.node }} [${{ matrix.shard }}]"
-  #   needs:
-  #     - build
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       runner: [windows, macos, ubuntu]
-  #       node: ["18", "20"]
-  #       shard: ["1/2", "2/2"]
-  #       full_run:
-  #         # Do a full run on push or when the PR is labeled "pr/e2e-full"
-  #         - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
-  #       exclude:
-  #         - runner: macos
-  #           full_run: false
-  #         - runner: windows
-  #           full_run: false
-  #         - runner: ubuntu
-  #           node: "20"
-  #           full_run: false
-  #   runs-on: "${{ matrix.runner }}-latest"
-  #   env:
-  #     HANGAR_WING_SPEC: "file:${{ github.workspace }}/target/wing/winglang-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCONSOLE_APP_SPEC: "file:${{ github.workspace }}/target/wingconsoleapp/wingconsole-app-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCONSOLE_SERVER_SPEC: "file:${{ github.workspace }}/target/wingconsoleserver/wingconsole-server-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCONSOLE_DESIGN_SYSTEM_SPEC: "file:${{ github.workspace }}/target/wingconsoledesignsystem/wingconsole-design-system-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCONSOLE_UI_SPEC: "file:${{ github.workspace }}/target/wingconsoleui/wingconsole-ui-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGCOMPILER_SPEC: "file:${{ github.workspace }}/target/wingcompiler/winglang-compiler-${{ needs.build.outputs.version }}.tgz"
-  #     HANGAR_WINGSDK_SPEC: "file:${{ github.workspace }}/target/wingsdk/winglang-sdk-${{ needs.build.outputs.version }}.tgz"
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-
-  #     - name: Download Build Artifacts
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         path: target
-
-  #     - name: Setup pnpm
-  #       uses: pnpm/action-setup@v2.2.4
-  #       with:
-  #         version: ${{ env.PNPM_VERSION }}
-
-  #     - name: Setup Node
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         cache: "pnpm"
-  #         node-version: ${{ matrix.node }}
-
-  #     - name: Install Dependencies
-  #       run: pnpm install --ignore-scripts --frozen-lockfile --filter hangar --filter examples-valid --filter examples-invalid
-
-  #     - name: Run E2E Tests
-  #       working-directory: tools/hangar
-  #       run: |
-  #         pnpm test:generate
-  #         pnpm run test --shard=${{ matrix.shard }} --update=${{ matrix.runner == 'ubuntu' && matrix.node == '18' }}
-
-  #     - name: Create mutation if needed
-  #       # we only care about the diff in our standard dev env
-  #       if: matrix.runner == 'ubuntu' && matrix.node == '18'
-  #       id: diff
-  #       env:
-  #         RAW_SHARD: ${{ matrix.shard }}
-  #       run: |
-  #         SHARD=$(echo $RAW_SHARD | sed 's/\//of/g')
-  #         DIFF_NAME="e2e-$SHARD.diff"
-  #         git add --all
-  #         git diff --staged --binary --patch > $DIFF_NAME
-  #         if [ -s $DIFF_NAME ]; then
-  #           echo "diff=true" >> $GITHUB_OUTPUT
-  #           echo "diff_name=$DIFF_NAME" >> $GITHUB_OUTPUT
-  #         fi
-  #     - name: Upload mutation
-  #       if: matrix.runner == 'ubuntu' && matrix.node == '18' && steps.diff.outputs.diff == 'true'
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         name: ${{ steps.diff.outputs.diff_name }}
-  #         path: ${{ steps.diff.outputs.diff_name }}
+      - name: Publish tarballs to verdaccio registry
+        run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --access public ; done
+        working-directory: tools/hangar
 
   quality-gate:
     name: Quality Gate
