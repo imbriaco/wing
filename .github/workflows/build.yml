@@ -79,6 +79,12 @@ jobs:
         env:
           SEGMENT_WRITE_KEY: ${{ secrets.SEGMENT_WRITE_KEY }}
 
+      - name: Test
+        run: pnpm test
+
+      - name: Package
+        run: pnpm package
+
       - name: Upload tarballs
         uses: actions/upload-artifact@v3
         with:

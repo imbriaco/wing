@@ -9,8 +9,8 @@
   },
   "scripts": {
     "compile": "turbo compile",
-    "build": "turbo compile post-compile lint eslint test package --filter=!hangar",
-    "test": "turbo test --filter=!hangar",
+    "build": "turbo compile post-compile --filter=!hangar",
+    "test": "turbo lint eslint test --filter=!hangar",
     "package": "turbo run package",
     "docs": "./scripts/docsite.sh",
     "changelog": "bump-pack",
