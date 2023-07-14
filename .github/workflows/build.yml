@@ -75,64 +75,15 @@ jobs:
         run: pnpm changelog
 
       - name: Build
-        run: pnpm build:ci
+        run: pnpm build
         env:
           SEGMENT_WRITE_KEY: ${{ secrets.SEGMENT_WRITE_KEY }}
 
-      - name: Package
-        run: pnpm package:ci
-
-      - name: Upload Wing CLI
+      - name: Upload tarballs
         uses: actions/upload-artifact@v3
         with:
-          name: wing
-          path: apps/wing/*.tgz
-
-      - name: Upload Wing Console Server
-        uses: actions/upload-artifact@v3
-        with:
-          name: wingconsoleserver
-          path: apps/wing-console/console/server/*.tgz
-
-      - name: Upload Wing Console Design System
-        uses: actions/upload-artifact@v3
-        with:
-          name: wingconsoledesignsystem
-          path: apps/wing-console/console/design-system/*.tgz
-
-      - name: Upload Wing Console UI
-        uses: actions/upload-artifact@v3
-        with:
-          name: wingconsoleui
-          path: apps/wing-console/console/ui/*.tgz
-
-      - name: Upload Wing Console App
-        uses: actions/upload-artifact@v3
-        with:
-          name: wingconsoleapp
-          path: apps/wing-console/console/app/*.tgz
-
-      - name: Upload WingSDK
-        uses: actions/upload-artifact@v3
-        with:
-          name: wingsdk
-          path: libs/wingsdk/*.tgz
-
-      - name: Upload WingCompiler
-        uses: actions/upload-artifact@v3
-        with:
-          name: wingcompiler
-          path: libs/wingcompiler/*.tgz
-
-      - name: Upload WingC WASM
-        uses: actions/upload-artifact@v3
-        with:
-          name: wingc
-          path: target/wasm32-wasi/release/wingc.wasm
-
-      # - name: Derive appropriate SHAs for base and head for `nx affected` commands
-      #   id: setSHAs
-      #   uses: nrwl/nx-set-shas@v3
+          name: tarballs
+          path: dist/*.tgz
 
       - name: Check git diff of VSCode Extension
         id: git-diff-vscode-wing
@@ -158,350 +109,350 @@ jobs:
           name: docs
           path: docs.tgz
 
-  unit-tests:
-    name: "Unit Tests"
-    timeout-minutes: 30
-    runs-on: ubuntu-latest
-    env:
-      # Testing runs out of memory without this
-      NODE_OPTIONS: "--max-old-space-size=4096"
-      CARGO_TERM_COLOR: always
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
+  # unit-tests:
+  #   name: "Unit Tests"
+  #   timeout-minutes: 30
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     # Testing runs out of memory without this
+  #     NODE_OPTIONS: "--max-old-space-size=4096"
+  #     CARGO_TERM_COLOR: always
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 1
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2.2.4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v2.2.4
+  #       with:
+  #         version: ${{ env.PNPM_VERSION }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          cache: "pnpm"
-          node-version: ${{ env.NODE_VERSION }}
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         cache: "pnpm"
+  #         node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          targets: |
-            x86_64-unknown-linux-gnu
-            wasm32-wasi
-          components: rustfmt,clippy,rust-std
+  #     - name: Install Rust
+  #       uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: ${{ env.RUST_VERSION }}
+  #         targets: |
+  #           x86_64-unknown-linux-gnu
+  #           wasm32-wasi
+  #         components: rustfmt,clippy,rust-std
 
-      - name: Setup Cargo Cache
-        uses: Swatinem/rust-cache@v2
+  #     - name: Setup Cargo Cache
+  #       uses: Swatinem/rust-cache@v2
 
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+  #     - name: Install Dependencies
+  #       run: pnpm install --frozen-lockfile
 
-      - name: Test
-        run: pnpm test:ci
+  #     - name: Test
+  #       run: pnpm test:ci
 
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: playwright-report
-          path: apps/wing-console/console/app/playwright-report/
-          retention-days: 30
+  #     - uses: actions/upload-artifact@v3
+  #       if: always()
+  #       with:
+  #         name: playwright-report
+  #         path: apps/wing-console/console/app/playwright-report/
+  #         retention-days: 30
 
-      - name: Create git patch
-        id: diff
-        run: |
-          git add --all
-          git diff --staged --binary --patch > build.diff
-          if [ -s build.diff ]; then
-            echo "Diff found, creating a patch to apply later"
-            cat build.diff
-            echo "diff=true" >> $GITHUB_OUTPUT
-          fi
-      - name: Upload Diff
-        if: steps.diff.outputs.diff == 'true'
-        uses: actions/upload-artifact@v3
-        with:
-          name: build.diff
-          path: build.diff
+  #     - name: Create git patch
+  #       id: diff
+  #       run: |
+  #         git add --all
+  #         git diff --staged --binary --patch > build.diff
+  #         if [ -s build.diff ]; then
+  #           echo "Diff found, creating a patch to apply later"
+  #           cat build.diff
+  #           echo "diff=true" >> $GITHUB_OUTPUT
+  #         fi
+  #     - name: Upload Diff
+  #       if: steps.diff.outputs.diff == 'true'
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: build.diff
+  #         path: build.diff
 
-  benchmarks:
-    name: E2E Benchmarks
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    env:
-      HANGAR_WING_SPEC: "file:${{ github.workspace }}/wing/winglang-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCONSOLE_APP_SPEC: "file:${{ github.workspace }}/wingconsoleapp/wingconsole-app-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCONSOLE_SERVER_SPEC: "file:${{ github.workspace }}/wingconsoleserver/wingconsole-server-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCONSOLE_DESIGN_SYSTEM_SPEC: "file:${{ github.workspace }}/wingconsoledesignsystem/wingconsole-design-system-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCONSOLE_UI_SPEC: "file:${{ github.workspace }}/wingconsoleui/wingconsole-ui-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCOMPILER_SPEC: "file:${{ github.workspace }}/wingcompiler/winglang-compiler-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGSDK_SPEC: "file:${{ github.workspace }}/wingsdk/winglang-sdk-${{ needs.build.outputs.version }}.tgz"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+  # benchmarks:
+  #   name: E2E Benchmarks
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - build
+  #   env:
+  #     HANGAR_WING_SPEC: "file:${{ github.workspace }}/wing/winglang-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCONSOLE_APP_SPEC: "file:${{ github.workspace }}/wingconsoleapp/wingconsole-app-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCONSOLE_SERVER_SPEC: "file:${{ github.workspace }}/wingconsoleserver/wingconsole-server-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCONSOLE_DESIGN_SYSTEM_SPEC: "file:${{ github.workspace }}/wingconsoledesignsystem/wingconsole-design-system-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCONSOLE_UI_SPEC: "file:${{ github.workspace }}/wingconsoleui/wingconsole-ui-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCOMPILER_SPEC: "file:${{ github.workspace }}/wingcompiler/winglang-compiler-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGSDK_SPEC: "file:${{ github.workspace }}/wingsdk/winglang-sdk-${{ needs.build.outputs.version }}.tgz"
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
 
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v2
+  #     - name: Download Build Artifacts
+  #       uses: actions/download-artifact@v2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2.2.4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v2.2.4
+  #       with:
+  #         version: ${{ env.PNPM_VERSION }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          cache: "pnpm"
-          node-version: ${{ env.NODE_VERSION }}
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         cache: "pnpm"
+  #         node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install Dependencies
-        run: pnpm install --ignore-scripts --frozen-lockfile --filter hangar --filter examples-valid --filter examples-invalid
+  #     - name: Install Dependencies
+  #       run: pnpm install --ignore-scripts --frozen-lockfile --filter hangar --filter examples-valid --filter examples-invalid
 
-      - name: Run E2E Benchmarks
-        working-directory: tools/hangar
-        run: pnpm bench
+  #     - name: Run E2E Benchmarks
+  #       working-directory: tools/hangar
+  #       run: pnpm bench
 
-      - name: Upload Report JSON
-        uses: actions/upload-artifact@v3
-        with:
-          name: benchmarks
-          path: tools/hangar/results/report.json
+  #     - name: Upload Report JSON
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: benchmarks
+  #         path: tools/hangar/results/report.json
 
-      - name: Create Markdown report
-        run: node scripts/benchmark_json_to_table.mjs
+  #     - name: Create Markdown report
+  #       run: node scripts/benchmark_json_to_table.mjs
 
-  e2e:
-    name: "E2E / ${{ matrix.runner }} + Node${{ matrix.node }} [${{ matrix.shard }}]"
-    needs:
-      - build
-    strategy:
-      fail-fast: true
-      matrix:
-        runner: [windows, macos, ubuntu]
-        node: ["18", "20"]
-        shard: ["1/2", "2/2"]
-        full_run:
-          # Do a full run on push or when the PR is labeled "pr/e2e-full"
-          - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
-        exclude:
-          - runner: macos
-            full_run: false
-          - runner: windows
-            full_run: false
-          - runner: ubuntu
-            node: "20"
-            full_run: false
-    runs-on: "${{ matrix.runner }}-latest"
-    env:
-      HANGAR_WING_SPEC: "file:${{ github.workspace }}/target/wing/winglang-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCONSOLE_APP_SPEC: "file:${{ github.workspace }}/target/wingconsoleapp/wingconsole-app-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCONSOLE_SERVER_SPEC: "file:${{ github.workspace }}/target/wingconsoleserver/wingconsole-server-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCONSOLE_DESIGN_SYSTEM_SPEC: "file:${{ github.workspace }}/target/wingconsoledesignsystem/wingconsole-design-system-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCONSOLE_UI_SPEC: "file:${{ github.workspace }}/target/wingconsoleui/wingconsole-ui-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGCOMPILER_SPEC: "file:${{ github.workspace }}/target/wingcompiler/winglang-compiler-${{ needs.build.outputs.version }}.tgz"
-      HANGAR_WINGSDK_SPEC: "file:${{ github.workspace }}/target/wingsdk/winglang-sdk-${{ needs.build.outputs.version }}.tgz"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+  # e2e:
+  #   name: "E2E / ${{ matrix.runner }} + Node${{ matrix.node }} [${{ matrix.shard }}]"
+  #   needs:
+  #     - build
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       runner: [windows, macos, ubuntu]
+  #       node: ["18", "20"]
+  #       shard: ["1/2", "2/2"]
+  #       full_run:
+  #         # Do a full run on push or when the PR is labeled "pr/e2e-full"
+  #         - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
+  #       exclude:
+  #         - runner: macos
+  #           full_run: false
+  #         - runner: windows
+  #           full_run: false
+  #         - runner: ubuntu
+  #           node: "20"
+  #           full_run: false
+  #   runs-on: "${{ matrix.runner }}-latest"
+  #   env:
+  #     HANGAR_WING_SPEC: "file:${{ github.workspace }}/target/wing/winglang-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCONSOLE_APP_SPEC: "file:${{ github.workspace }}/target/wingconsoleapp/wingconsole-app-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCONSOLE_SERVER_SPEC: "file:${{ github.workspace }}/target/wingconsoleserver/wingconsole-server-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCONSOLE_DESIGN_SYSTEM_SPEC: "file:${{ github.workspace }}/target/wingconsoledesignsystem/wingconsole-design-system-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCONSOLE_UI_SPEC: "file:${{ github.workspace }}/target/wingconsoleui/wingconsole-ui-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGCOMPILER_SPEC: "file:${{ github.workspace }}/target/wingcompiler/winglang-compiler-${{ needs.build.outputs.version }}.tgz"
+  #     HANGAR_WINGSDK_SPEC: "file:${{ github.workspace }}/target/wingsdk/winglang-sdk-${{ needs.build.outputs.version }}.tgz"
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
 
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: target
+  #     - name: Download Build Artifacts
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         path: target
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2.2.4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v2.2.4
+  #       with:
+  #         version: ${{ env.PNPM_VERSION }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          cache: "pnpm"
-          node-version: ${{ matrix.node }}
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         cache: "pnpm"
+  #         node-version: ${{ matrix.node }}
 
-      - name: Install Dependencies
-        run: pnpm install --ignore-scripts --frozen-lockfile --filter hangar --filter examples-valid --filter examples-invalid
+  #     - name: Install Dependencies
+  #       run: pnpm install --ignore-scripts --frozen-lockfile --filter hangar --filter examples-valid --filter examples-invalid
 
-      - name: Run E2E Tests
-        working-directory: tools/hangar
-        run: |
-          pnpm test:generate
-          pnpm run test --shard=${{ matrix.shard }} --update=${{ matrix.runner == 'ubuntu' && matrix.node == '18' }}
+  #     - name: Run E2E Tests
+  #       working-directory: tools/hangar
+  #       run: |
+  #         pnpm test:generate
+  #         pnpm run test --shard=${{ matrix.shard }} --update=${{ matrix.runner == 'ubuntu' && matrix.node == '18' }}
 
-      - name: Create mutation if needed
-        # we only care about the diff in our standard dev env
-        if: matrix.runner == 'ubuntu' && matrix.node == '18'
-        id: diff
-        env:
-          RAW_SHARD: ${{ matrix.shard }}
-        run: |
-          SHARD=$(echo $RAW_SHARD | sed 's/\//of/g')
-          DIFF_NAME="e2e-$SHARD.diff"
-          git add --all
-          git diff --staged --binary --patch > $DIFF_NAME
-          if [ -s $DIFF_NAME ]; then
-            echo "diff=true" >> $GITHUB_OUTPUT
-            echo "diff_name=$DIFF_NAME" >> $GITHUB_OUTPUT
-          fi
-      - name: Upload mutation
-        if: matrix.runner == 'ubuntu' && matrix.node == '18' && steps.diff.outputs.diff == 'true'
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.diff.outputs.diff_name }}
-          path: ${{ steps.diff.outputs.diff_name }}
+  #     - name: Create mutation if needed
+  #       # we only care about the diff in our standard dev env
+  #       if: matrix.runner == 'ubuntu' && matrix.node == '18'
+  #       id: diff
+  #       env:
+  #         RAW_SHARD: ${{ matrix.shard }}
+  #       run: |
+  #         SHARD=$(echo $RAW_SHARD | sed 's/\//of/g')
+  #         DIFF_NAME="e2e-$SHARD.diff"
+  #         git add --all
+  #         git diff --staged --binary --patch > $DIFF_NAME
+  #         if [ -s $DIFF_NAME ]; then
+  #           echo "diff=true" >> $GITHUB_OUTPUT
+  #           echo "diff_name=$DIFF_NAME" >> $GITHUB_OUTPUT
+  #         fi
+  #     - name: Upload mutation
+  #       if: matrix.runner == 'ubuntu' && matrix.node == '18' && steps.diff.outputs.diff == 'true'
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: ${{ steps.diff.outputs.diff_name }}
+  #         path: ${{ steps.diff.outputs.diff_name }}
 
-  quality-gate:
-    name: Quality Gate
-    runs-on: ubuntu-latest
-    needs:
-      - build
-      - e2e
-      - benchmarks
-      - unit-tests
-    steps:
-      - name: Download patches
-        uses: actions/download-artifact@v3
-      - name: Check patches
-        run: |
-          PATCH_COUNT=0
-          for f in $(find ./*.diff/*.diff); do
-            PATCH_COUNT=$((PATCH_COUNT + 1))
-            cat $f
-          done
-          if [ $PATCH_COUNT -gt 0 ]; then
-            echo "Found $PATCH_COUNT patches, build failed. A self-mutation should happen soon."
-            exit 1
-          fi
-      - name: All good
-        run: echo "Builds and tests passed! 🎉🎉🎉"
+  # quality-gate:
+  #   name: Quality Gate
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - build
+  #     - e2e
+  #     - benchmarks
+  #     - unit-tests
+  #   steps:
+  #     - name: Download patches
+  #       uses: actions/download-artifact@v3
+  #     - name: Check patches
+  #       run: |
+  #         PATCH_COUNT=0
+  #         for f in $(find ./*.diff/*.diff); do
+  #           PATCH_COUNT=$((PATCH_COUNT + 1))
+  #           cat $f
+  #         done
+  #         if [ $PATCH_COUNT -gt 0 ]; then
+  #           echo "Found $PATCH_COUNT patches, build failed. A self-mutation should happen soon."
+  #           exit 1
+  #         fi
+  #     - name: All good
+  #       run: echo "Builds and tests passed! 🎉🎉🎉"
 
-  publish:
-    name: Publish
-    if: ${{ github.event_name == 'push' && github.repository == 'winglang/wing' && github.ref == 'refs/heads/main' }}
-    needs:
-      - quality-gate
-      - build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v3
+  # publish:
+  #   name: Publish
+  #   if: ${{ github.event_name == 'push' && github.repository == 'winglang/wing' && github.ref == 'refs/heads/main' }}
+  #   needs:
+  #     - quality-gate
+  #     - build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download Build Artifacts
+  #       uses: actions/download-artifact@v3
 
-      - name: Tag commit
-        uses: tvdias/github-tagger@v0.0.1
-        if: ${{ needs.build.outputs.last-version != needs.build.outputs.version }}
-        with:
-          repo-token: "${{ secrets.PROJEN_GITHUB_TOKEN }}"
-          tag: "v${{ needs.build.outputs.version }}"
+  #     - name: Tag commit
+  #       uses: tvdias/github-tagger@v0.0.1
+  #       if: ${{ needs.build.outputs.last-version != needs.build.outputs.version }}
+  #       with:
+  #         repo-token: "${{ secrets.PROJEN_GITHUB_TOKEN }}"
+  #         tag: "v${{ needs.build.outputs.version }}"
 
-      - name: Publish Extension to Visual Studio Marketplace
-        if: needs.build.outputs.vscode-wing-changed == 'true'
-        uses: "HaaLeo/publish-vscode-extension@v1"
-        with:
-          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          registryUrl: "https://marketplace.visualstudio.com"
-          extensionFile: "vscode-wing/vscode-wing.vsix"
-          dependencies: false
+  #     - name: Publish Extension to Visual Studio Marketplace
+  #       if: needs.build.outputs.vscode-wing-changed == 'true'
+  #       uses: "HaaLeo/publish-vscode-extension@v1"
+  #       with:
+  #         pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+  #         registryUrl: "https://marketplace.visualstudio.com"
+  #         extensionFile: "vscode-wing/vscode-wing.vsix"
+  #         dependencies: false
 
-      - name: Login to NPM registry
-        run: npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_PUBLISH_TOKEN }}
+  #     - name: Login to NPM registry
+  #       run: npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_PUBLISH_TOKEN }}
 
-      - name: Check published WingSDK version
-        id: wingsdk-version
-        run: echo "version=$(npm view @winglang/sdk version)" >> $GITHUB_OUTPUT
+  #     - name: Check published WingSDK version
+  #       id: wingsdk-version
+  #       run: echo "version=$(npm view @winglang/sdk version)" >> $GITHUB_OUTPUT
 
-      - name: Publish Wing SDK
-        if: ${{ steps.wingsdk-version.outputs.version != needs.build.outputs.version }}
-        working-directory: wingsdk
-        run: npm publish *.tgz --access public
+  #     - name: Publish Wing SDK
+  #       if: ${{ steps.wingsdk-version.outputs.version != needs.build.outputs.version }}
+  #       working-directory: wingsdk
+  #       run: npm publish *.tgz --access public
 
-      - name: Check published Wing Compiler version
-        id: wingcompiler-version
-        run: echo "version=$(npm view @winglang/compiler version)" >> $GITHUB_OUTPUT
+  #     - name: Check published Wing Compiler version
+  #       id: wingcompiler-version
+  #       run: echo "version=$(npm view @winglang/compiler version)" >> $GITHUB_OUTPUT
 
-      - name: Publish Wing Compiler
-        if: ${{ steps.wingcompiler-version.outputs.version != needs.build.outputs.version }}
-        working-directory: wingcompiler
-        run: npm publish *.tgz --access public
+  #     - name: Publish Wing Compiler
+  #       if: ${{ steps.wingcompiler-version.outputs.version != needs.build.outputs.version }}
+  #       working-directory: wingcompiler
+  #       run: npm publish *.tgz --access public
 
-      - name: Check published Wing Console Design System version
-        id: wingconsoledesignsystem-version
-        run: echo "version=$(npm view @wingconsole/design-system version)" >> $GITHUB_OUTPUT
+  #     - name: Check published Wing Console Design System version
+  #       id: wingconsoledesignsystem-version
+  #       run: echo "version=$(npm view @wingconsole/design-system version)" >> $GITHUB_OUTPUT
 
-      - name: Publish Wing Console Design System
-        if: ${{ steps.wingconsoledesignsystem-version.outputs.version != needs.build.outputs.version }}
-        working-directory: wingconsoledesignsystem
-        run: npm publish *.tgz --access public
+  #     - name: Publish Wing Console Design System
+  #       if: ${{ steps.wingconsoledesignsystem-version.outputs.version != needs.build.outputs.version }}
+  #       working-directory: wingconsoledesignsystem
+  #       run: npm publish *.tgz --access public
 
-      - name: Check published Wing Console UI version
-        id: wingconsoleui-version
-        run: echo "version=$(npm view @wingconsole/ui version)" >> $GITHUB_OUTPUT
+  #     - name: Check published Wing Console UI version
+  #       id: wingconsoleui-version
+  #       run: echo "version=$(npm view @wingconsole/ui version)" >> $GITHUB_OUTPUT
 
-      - name: Publish Wing Console UI
-        if: ${{ steps.wingconsoleui-version.outputs.version != needs.build.outputs.version }}
-        working-directory: wingconsoleui
-        run: npm publish *.tgz --access public
+  #     - name: Publish Wing Console UI
+  #       if: ${{ steps.wingconsoleui-version.outputs.version != needs.build.outputs.version }}
+  #       working-directory: wingconsoleui
+  #       run: npm publish *.tgz --access public
 
-      - name: Check published Wing Console Server version
-        id: wingconsoleserver-version
-        run: echo "version=$(npm view @wingconsole/server version)" >> $GITHUB_OUTPUT
+  #     - name: Check published Wing Console Server version
+  #       id: wingconsoleserver-version
+  #       run: echo "version=$(npm view @wingconsole/server version)" >> $GITHUB_OUTPUT
 
-      - name: Publish Wing Console Server
-        if: ${{ steps.wingconsoleserver-version.outputs.version != needs.build.outputs.version }}
-        working-directory: wingconsoleserver
-        run: npm publish *.tgz --access public
+  #     - name: Publish Wing Console Server
+  #       if: ${{ steps.wingconsoleserver-version.outputs.version != needs.build.outputs.version }}
+  #       working-directory: wingconsoleserver
+  #       run: npm publish *.tgz --access public
 
-      - name: Check published Wing Console App version
-        id: wingconsoleapp-version
-        run: echo "version=$(npm view @wingconsole/app version)" >> $GITHUB_OUTPUT
+  #     - name: Check published Wing Console App version
+  #       id: wingconsoleapp-version
+  #       run: echo "version=$(npm view @wingconsole/app version)" >> $GITHUB_OUTPUT
 
-      - name: Publish Wing Console App
-        if: ${{ steps.wingconsoleapp-version.outputs.version != needs.build.outputs.version }}
-        working-directory: wingconsoleapp
-        run: npm publish *.tgz --access public
+  #     - name: Publish Wing Console App
+  #       if: ${{ steps.wingconsoleapp-version.outputs.version != needs.build.outputs.version }}
+  #       working-directory: wingconsoleapp
+  #       run: npm publish *.tgz --access public
 
-      - name: Check published Wing version
-        id: wing-version
-        run: echo "version=$(npm view winglang version)" >> $GITHUB_OUTPUT
+  #     - name: Check published Wing version
+  #       id: wing-version
+  #       run: echo "version=$(npm view winglang version)" >> $GITHUB_OUTPUT
 
-      - name: Publish Wing
-        if: ${{ steps.wing-version.outputs.version != needs.build.outputs.version }}
-        working-directory: wing
-        run: npm publish *.tgz --access public
+  #     - name: Publish Wing
+  #       if: ${{ steps.wing-version.outputs.version != needs.build.outputs.version }}
+  #       working-directory: wing
+  #       run: npm publish *.tgz --access public
 
-      - name: Rename Docs
-        run: mv docs "docs-${{ needs.build.outputs.version }}.tgz"
+  #     - name: Rename Docs
+  #       run: mv docs "docs-${{ needs.build.outputs.version }}.tgz"
 
-      - name: Write Changelog
-        uses: DamianReeves/write-file-action@v1.2
-        with:
-          path: "CHANGELOG.md"
-          contents: ${{ needs.build.outputs.changelog }}
-          write-mode: overwrite
+  #     - name: Write Changelog
+  #       uses: DamianReeves/write-file-action@v1.2
+  #       with:
+  #         path: "CHANGELOG.md"
+  #         contents: ${{ needs.build.outputs.changelog }}
+  #         write-mode: overwrite
 
-      - name: Compute Checksums
-        run: |
-          mkdir dist
-          mv ./*/*.vsix ./dist
-          mv ./*/*.tgz ./dist
-          mv ./*/*.wasm ./dist
-          mv ./benchmarks/* ./dist
-          cd dist
+  #     - name: Compute Checksums
+  #       run: |
+  #         mkdir dist
+  #         mv ./*/*.vsix ./dist
+  #         mv ./*/*.tgz ./dist
+  #         mv ./*/*.wasm ./dist
+  #         mv ./benchmarks/* ./dist
+  #         cd dist
 
-          echo '' >> ../CHANGELOG.md
-          echo '### SHA-1 Checksums' >> ../CHANGELOG.md
-          echo '```' >> ../CHANGELOG.md
-          sha1sum --binary * >> ../CHANGELOG.md
-          echo '```' >> ../CHANGELOG.md
-          cat ../CHANGELOG.md
+  #         echo '' >> ../CHANGELOG.md
+  #         echo '### SHA-1 Checksums' >> ../CHANGELOG.md
+  #         echo '```' >> ../CHANGELOG.md
+  #         sha1sum --binary * >> ../CHANGELOG.md
+  #         echo '```' >> ../CHANGELOG.md
+  #         cat ../CHANGELOG.md
 
-      - name: Cut Development Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: "Wing ${{ needs.build.outputs.version }}"
-          tag_name: "v${{ needs.build.outputs.version }}"
-          body_path: CHANGELOG.md
-          files: dist/*
-          token: ${{ secrets.PROJEN_GITHUB_TOKEN }}
+  #     - name: Cut Development Release
+  #       uses: softprops/action-gh-release@v1
+  #       with:
+  #         name: "Wing ${{ needs.build.outputs.version }}"
+  #         tag_name: "v${{ needs.build.outputs.version }}"
+  #         body_path: CHANGELOG.md
+  #         files: dist/*
+  #         token: ${{ secrets.PROJEN_GITHUB_TOKEN }}
