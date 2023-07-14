@@ -3,7 +3,8 @@
   "extends": ["//"],
   "pipeline": {
     "compile": {
-      "outputs": ["lib/**"]
+      "inputs": ["lib/**"],
+      "outputs": [".jsii"]
     },
     "package": {
       "outputs": ["dist/**"]
