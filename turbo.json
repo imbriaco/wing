@@ -1,26 +1,24 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "globalDependencies": ["tsconfig.json"],
   "pipeline": {
     "compile": {
       "dependsOn": ["^compile"],
       "inputs": ["src/**"]
-    },
-    "dev": {
-      "dependsOn": ["^compile"],
-      "persistent": true,
-      "cache": false
     },
     "test": {
       "dependsOn": ["compile"],
       "inputs": ["src/**", "test/**"]
     },
     "post-compile": {
-      "dependsOn": ["^compile"],
+      "dependsOn": ["compile"],
       "cache": false
     },
-    "lint": {},
-    "eslint": {},
+    "lint": {
+      "inputs": ["src/**"]
+    },
+    "eslint": {
+      "inputs": ["src/**"]
+    },
     "package": {
       "dependsOn": ["compile"],
       "cache": false
