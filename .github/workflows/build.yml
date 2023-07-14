@@ -81,9 +81,6 @@ jobs:
         env:
           SEGMENT_WRITE_KEY: ${{ secrets.SEGMENT_WRITE_KEY }}
 
-      - name: Test
-        run: pnpm test
-
       - name: Package
         run: pnpm package
 
@@ -116,6 +113,52 @@ jobs:
         with:
           name: docs
           path: docs.tgz
+
+  test:
+    name: "Test"
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    env:
+      CARGO_TERM_COLOR: always
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: "pnpm"
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: |
+            x86_64-unknown-linux-gnu
+            wasm32-wasi
+          components: rustfmt,clippy,rust-std
+
+      - name: Setup Cargo Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
 
   # unit-tests:
   #   name: "Unit Tests"
