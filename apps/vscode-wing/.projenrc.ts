@@ -9,10 +9,10 @@ const VSCODE_BASE_VERSION = "1.70.0";
 const project = new TypeScriptAppProject({
   defaultReleaseBranch: "main",
   name: "vscode-wing",
-  authorName: "Monada",
-  authorEmail: "ping@monada.co",
+  authorName: "Wing Cloud",
+  authorEmail: "ping@wing.cloud",
   authorOrganization: true,
-  authorUrl: "https://monada.co",
+  authorUrl: "https://winglang.io",
   repository: "https://github.com/winglang/wing.git",
   bugsUrl: "https://github.com/winglang/wing/issues",
   homepage: "https://winglang.io",
@@ -157,7 +157,7 @@ project.addFields({
   publisher: "Monada",
   preview: true,
   private: true,
-  displayName: "Wing [Alpha]",
+  displayName: "Wing",
   icon: "resources/logo.png",
   engines: {
     vscode: `^${VSCODE_BASE_VERSION}`,
