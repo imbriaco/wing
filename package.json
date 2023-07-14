@@ -2,7 +2,6 @@
   "name": "@winglang/monorepo",
   "private": true,
   "devDependencies": {
-    "@nrwl/devkit": "16.5.0",
     "bump-pack": "workspace:^",
     "changelogen": "^0.5.3",
     "semver": "^7.3.8",
