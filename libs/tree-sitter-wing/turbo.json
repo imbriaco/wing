@@ -2,23 +2,23 @@
   "$schema": "https://turborepo.org/schema.json",
   "extends": ["//"],
   "pipeline": {
-    "compile:generate": {
+    "build:generate": {
       "inputs": ["grammar.js"],
       "outputs": ["src/**", "bindings/**", "binding.gyp"]
     },
-    "compile:wasm": {
-      "dependsOn": ["compile:generate"],
+    "build:wasm": {
+      "dependsOn": ["build:generate"],
       "inputs": ["src/**", "bindings/**", "binding.gyp"],
       "outputs": ["tree-sitter-wing.wasm"]
     },
     "compile": {
-      "dependsOn": ["compile:wasm"]
+      "dependsOn": ["build:wasm"]
     },
     "playground": {
-      "dependsOn": ["compile:wasm"]
+      "dependsOn": ["build:wasm"]
     },
     "playground:quiet": {
-      "dependsOn": ["compile:wasm"]
+      "dependsOn": ["build:wasm"]
     }
   }
 }
