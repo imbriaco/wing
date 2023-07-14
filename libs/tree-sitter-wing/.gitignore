@@ -1,4 +1,6 @@
 /bindings/
-# /src/*
-# !/src/scanner.c
+/src/*
+!/src/scanner.c
 /binding.gyp
+/log.html
+/*.wasm
