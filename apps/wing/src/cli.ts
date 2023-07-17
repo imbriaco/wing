@@ -10,7 +10,7 @@ import { exportAnalytics } from "./analytics/export";
 import { optionallyDisplayDisclaimer } from "./analytics/disclaimer";
 import { currentPackage } from "./util";
 import { log } from "console";
-import { chokidar } from "chokidar";
+import * as chokidar from "chokidar";
 
 export const PACKAGE_VERSION = currentPackage.version;
 let analyticsExportFile: Promise<string | undefined>;
@@ -112,7 +112,7 @@ async function main() {
       });
 
       watcher.on("change", async () => {
-        console.log("Wing source changed, rerunning tests...");
+        log("Wing source changed, rerunning tests...");
         runSubCommand("test");
       });
 
