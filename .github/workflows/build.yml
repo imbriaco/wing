@@ -42,14 +42,14 @@ jobs:
       - name: Check git diff of VSCode Extension
         id: git-diff-vscode-wing
         run: |
-          if git diff --quiet ${{ github.base_ref }} ${{ github.sha }} -- apps/vscode-wing; then
+          if git diff --quiet origin/${{ github.base_ref }} ${{ github.sha }} -- apps/vscode-wing; then
             echo "::set-output name=diff::false"
           else
             echo "::set-output name=diff::true"
           fi
 
-      - run: git diff --name-only ${{ github.base_ref }} ${{ github.sha }} -- apps/vscode-wing
-      - run: git diff --name-only ${{ github.base_ref }}..${{ github.sha }} -- apps/vscode-wing
+      - run: git diff --name-only origin/${{ github.base_ref }} ${{ github.sha }} -- apps/vscode-wing
+      - run: git diff --name-only $origin/{{ github.base_ref }}..${{ github.sha }} -- apps/vscode-wing
     # steps:
     #   - name: Checkout
     #     uses: actions/checkout@v3
