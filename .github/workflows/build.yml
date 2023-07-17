@@ -48,13 +48,13 @@ jobs:
         id: git-diff-vscode-wing
         run: |
           if git diff --quiet origin/${{ github.base_ref }} ${{ github.sha }} -- apps/vscode-wing; then
-            echo "::set-output name=diff::false"
+            echo "diff=false" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=diff::true"
+            echo "diff=true" >> $GITHUB_OUTPUT
           fi
 
-      - run: git diff --name-only origin/${{ github.base_ref }} ${{ github.sha }} -- apps/vscode-wing
-      - run: git diff --name-only $origin/{{ github.base_ref }}..${{ github.sha }} -- apps/vscode-wing
+      - run: echo "value is ${{ steps.git-diff-vscode-wing.diff }}"
+
     # steps:
     #   - name: Checkout
     #     uses: actions/checkout@v3
