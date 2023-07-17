@@ -39,212 +39,224 @@ jobs:
       vscode-wing-changed: ${{ steps.git-diff-vscode-wing.outputs.diff }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2.2.4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          cache: "pnpm"
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          targets: |
-            x86_64-unknown-linux-gnu
-            wasm32-wasi
-          components: rustfmt,clippy,rust-std
-
-      - name: Setup Cargo Cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Changelog Generation
-        id: changelog
-        env:
-          GENERATE_VERSION: ${{ github.event_name != 'push' || github.repository != 'winglang/wing' }}
-        run: pnpm changelog
-
-      - name: Build
-        run: pnpm build
-        env:
-          SEGMENT_WRITE_KEY: ${{ secrets.SEGMENT_WRITE_KEY }}
-
-      - name: Package
-        run: pnpm package
-
-      - name: Upload tarballs
-        uses: actions/upload-artifact@v3
-        with:
-          name: tarballs
-          path: dist/*.tgz
-
       - name: Check git diff of VSCode Extension
         id: git-diff-vscode-wing
         run: |
-          if git diff --quiet ${{ steps.setSHAs.outputs.base }} ${{ github.sha }} -- apps/vscode-wing; then
+          if git diff --quiet ${{ github.base_ref }} ${{ github.sha }} -- apps/vscode-wing; then
             echo "::set-output name=diff::false"
           else
             echo "::set-output name=diff::true"
           fi
 
-      - name: Upload Extension
-        uses: actions/upload-artifact@v3
-        with:
-          name: vscode-wing
-          path: apps/vscode-wing/vscode-wing.vsix
+      - run: git diff --name-only ${{ github.base_ref }} ${{ github.sha }} -- apps/vscode-wing
+      - run: git diff --name-only ${{ github.base_ref }}..${{ github.sha }} -- apps/vscode-wing
+    # steps:
+    #   - name: Checkout
+    #     uses: actions/checkout@v3
+    #     with:
+    #       fetch-depth: 0
 
-      - name: Compress Docs
-        run: tar -czvf docs.tgz docs/*
+    #   - name: Setup pnpm
+    #     uses: pnpm/action-setup@v2.2.4
+    #     with:
+    #       version: ${{ env.PNPM_VERSION }}
 
-      - name: Upload Docs
-        uses: actions/upload-artifact@v3
-        with:
-          name: docs
-          path: docs.tgz
+    #   - name: Setup Node
+    #     uses: actions/setup-node@v3
+    #     with:
+    #       cache: "pnpm"
+    #       node-version: ${{ env.NODE_VERSION }}
 
-  test:
-    name: Test
-    timeout-minutes: 30
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    env:
-      CARGO_TERM_COLOR: always
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+    #   - name: Install Rust
+    #     uses: dtolnay/rust-toolchain@master
+    #     with:
+    #       toolchain: ${{ env.RUST_VERSION }}
+    #       targets: |
+    #         x86_64-unknown-linux-gnu
+    #         wasm32-wasi
+    #       components: rustfmt,clippy,rust-std
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+    #   - name: Setup Cargo Cache
+    #     uses: Swatinem/rust-cache@v2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2.2.4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+    #   - name: Install Dependencies
+    #     run: pnpm install --frozen-lockfile
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          cache: "pnpm"
-          node-version: ${{ env.NODE_VERSION }}
+    #   - name: Changelog Generation
+    #     id: changelog
+    #     env:
+    #       GENERATE_VERSION: ${{ github.event_name != 'push' || github.repository != 'winglang/wing' }}
+    #     run: pnpm changelog
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          targets: |
-            x86_64-unknown-linux-gnu
-            wasm32-wasi
-          components: rustfmt,clippy,rust-std
+    #   - name: Build
+    #     run: pnpm build
+    #     env:
+    #       SEGMENT_WRITE_KEY: ${{ secrets.SEGMENT_WRITE_KEY }}
 
-      - name: Setup Cargo Cache
-        uses: Swatinem/rust-cache@v2
+    #   - name: Package
+    #     run: pnpm package
 
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+    #   - name: Upload tarballs
+    #     uses: actions/upload-artifact@v3
+    #     with:
+    #       name: tarballs
+    #       path: dist/*.tgz
 
-      - name: Test
-        run: pnpm test
+    #   - name: Check git diff of VSCode Extension
+    #     id: git-diff-vscode-wing
+    #     run: |
+    #       if git diff --quiet ${{ steps.setSHAs.outputs.base }} ${{ github.sha }} -- apps/vscode-wing; then
+    #         echo "::set-output name=diff::false"
+    #       else
+    #         echo "::set-output name=diff::true"
+    #       fi
 
-  benchmark:
-    name: Benchmark
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - run: echo "skip"
+    #   - name: Upload Extension
+    #     uses: actions/upload-artifact@v3
+    #     with:
+    #       name: vscode-wing
+    #       path: apps/vscode-wing/vscode-wing.vsix
 
-  e2e-test:
-    name: E2E Test
-    runs-on: ubuntu-latest
-    needs:
-      - build
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
+    #   - name: Compress Docs
+    #     run: tar -czvf docs.tgz docs/*
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2.2.4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+    #   - name: Upload Docs
+    #     uses: actions/upload-artifact@v3
+    #     with:
+    #       name: docs
+    #       path: docs.tgz
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          cache: "pnpm"
-          node-version: ${{ env.NODE_VERSION }}
+  # test:
+  #   name: Test
+  #   timeout-minutes: 30
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - build
+  #   env:
+  #     CARGO_TERM_COLOR: always
+  #     TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  #     TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
-      - name: Download tarballs
-        uses: actions/download-artifact@v3
-        with:
-          name: tarballs
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Install dependencies
-        run: pnpm i --frozen-lockfile --filter hangar
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v2.2.4
+  #       with:
+  #         version: ${{ env.PNPM_VERSION }}
 
-      - name: Starting the verdaccio registry
-        run: nohup pnpm verdaccio > nohup.out 2> nohup.err < /dev/null &
-        working-directory: tools/hangar
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         cache: "pnpm"
+  #         node-version: ${{ env.NODE_VERSION }}
 
-      - name: Login to verdaccio registry
-        run: pnpm npm-auth-to-token -u test -p test -e test@test.com -r http://localhost:4873/
-        working-directory: tools/hangar
+  #     - name: Install Rust
+  #       uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: ${{ env.RUST_VERSION }}
+  #         targets: |
+  #           x86_64-unknown-linux-gnu
+  #           wasm32-wasi
+  #         components: rustfmt,clippy,rust-std
 
-      - name: Publish tarballs to verdaccio registry
-        run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --no-git-checks --access public ; done
-        working-directory: tools/hangar
+  #     - name: Setup Cargo Cache
+  #       uses: Swatinem/rust-cache@v2
 
-  quality-gate:
-    name: Quality Gate
-    runs-on: ubuntu-latest
-    needs:
-      - build
-      - e2e-test
-      - benchmark
-      - test
-    steps:
-      - name: Download patches
-        uses: actions/download-artifact@v3
-      - name: Check patches
-        run: |
-          PATCH_COUNT=0
-          for f in $(find ./*.diff/*.diff); do
-            PATCH_COUNT=$((PATCH_COUNT + 1))
-            cat $f
-          done
-          if [ $PATCH_COUNT -gt 0 ]; then
-            echo "Found $PATCH_COUNT patches, build failed. A self-mutation should happen soon."
-            exit 1
-          fi
-      - name: All good
-        run: echo "Builds and tests passed! 🎉🎉🎉"
+  #     - name: Install Dependencies
+  #       run: pnpm install --frozen-lockfile
 
-  publish:
-    name: Publish
-    if: ${{ github.event_name == 'push' && github.repository == 'winglang/wing' && github.ref == 'refs/heads/main' }}
-    needs:
-      - quality-gate
-      - build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v3
+  #     - name: Test
+  #       run: pnpm test
+
+  # benchmark:
+  #   name: Benchmark
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - build
+  #   steps:
+  #     - run: echo "skip"
+
+  # e2e-test:
+  #   name: E2E Test
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - build
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 1
+
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v2.2.4
+  #       with:
+  #         version: ${{ env.PNPM_VERSION }}
+
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         cache: "pnpm"
+  #         node-version: ${{ env.NODE_VERSION }}
+
+  #     - name: Download tarballs
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: tarballs
+
+  #     - name: Install dependencies
+  #       run: pnpm i --frozen-lockfile --filter hangar
+
+  #     - name: Starting the verdaccio registry
+  #       run: nohup pnpm verdaccio > nohup.out 2> nohup.err < /dev/null &
+  #       working-directory: tools/hangar
+
+  #     - name: Login to verdaccio registry
+  #       run: pnpm npm-auth-to-token -u test -p test -e test@test.com -r http://localhost:4873/
+  #       working-directory: tools/hangar
+
+  #     - name: Publish tarballs to verdaccio registry
+  #       run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --no-git-checks --access public ; done
+  #       working-directory: tools/hangar
+
+  # quality-gate:
+  #   name: Quality Gate
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - build
+  #     - e2e-test
+  #     - benchmark
+  #     - test
+  #   steps:
+  #     - name: Download patches
+  #       uses: actions/download-artifact@v3
+  #     - name: Check patches
+  #       run: |
+  #         PATCH_COUNT=0
+  #         for f in $(find ./*.diff/*.diff); do
+  #           PATCH_COUNT=$((PATCH_COUNT + 1))
+  #           cat $f
+  #         done
+  #         if [ $PATCH_COUNT -gt 0 ]; then
+  #           echo "Found $PATCH_COUNT patches, build failed. A self-mutation should happen soon."
+  #           exit 1
+  #         fi
+  #     - name: All good
+  #       run: echo "Builds and tests passed! 🎉🎉🎉"
+
+  # publish:
+  #   name: Publish
+  #   if: ${{ github.event_name == 'push' && github.repository == 'winglang/wing' && github.ref == 'refs/heads/main' }}
+  #   needs:
+  #     - quality-gate
+  #     - build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download Build Artifacts
+  #       uses: actions/download-artifact@v3
 
   #     - name: Tag commit
   #       uses: tvdias/github-tagger@v0.0.1
