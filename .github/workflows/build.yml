@@ -55,6 +55,13 @@ jobs:
 
       - run: echo "value is ${{ steps.git-diff-vscode-wing.diff }}"
 
+      - name: Set color
+        id: random-color-generator
+        run: echo "SELECTED_COLOR=green" >> "$GITHUB_OUTPUT"
+      - name: Get color
+
+        run: echo "The selected color is ${{ steps.random-color-generator.outputs.SELECTED_COLOR }}"
+
     # steps:
     #   - name: Checkout
     #     uses: actions/checkout@v3
