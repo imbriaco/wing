@@ -39,6 +39,11 @@ jobs:
       vscode-wing-changed: ${{ steps.git-diff-vscode-wing.outputs.diff }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Check git diff of VSCode Extension
         id: git-diff-vscode-wing
         run: |
