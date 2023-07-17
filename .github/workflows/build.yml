@@ -54,7 +54,8 @@ jobs:
           fi
 
       - run: |
-          if ${{ steps.git-diff-vscode-wing.diff }}; then
+          echo ${{ steps.git-diff-vscode-wing.outputs.diff }};
+          if ${{ steps.git-diff-vscode-wing.outputs.diff }}; then
             echo "diff is true"
           else
             echo "diff is false"
