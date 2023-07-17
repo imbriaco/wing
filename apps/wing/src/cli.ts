@@ -116,9 +116,9 @@ async function main() {
         runSubCommand("test");
       });
 
-      // watcher.on("error", (error) => {
-      //   console.error("Error watching Wing source files", error);
-      // });
+      watcher.on("error", (error) => {
+        console.error("Error watching Wing source files", error);
+      });
     }
   }
 
