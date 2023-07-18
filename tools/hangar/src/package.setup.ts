@@ -1,19 +1,8 @@
-import assert from "assert";
+import assert from "node:assert";
 import { execa } from "execa";
-import fs from "fs/promises";
-import {
-  npmBin,
-  npmCacheDir,
-  targetWingSDKSpec,
-  targetWingCompilerSpec,
-  targetWingSpec,
-  targetWingConsoleAppSpec,
-  targetWingConsoleServerSpec,
-  targetWingConsoleDesignSystemSpec,
-  targetWingConsoleUiSpec,
-  tmpDir,
-  wingBin,
-} from "./paths";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { npmBin, npmCacheDir, tmpDir, wingBin } from "./paths";
 
 const shellEnv = {
   ...process.env,
@@ -36,18 +25,16 @@ export default async function () {
   });
 
   // use execSync to install npm deps in tmpDir
+  const tarballsDir = path.resolve(`${__dirname}/../../../dist`);
+  const tarballs = (await fs.readdir(tarballsDir))
+    .filter((filename) => filename.endsWith(".tgz"))
+    .map((tarball) => `file:${tarballsDir}/${tarball}`);
   console.debug(`Installing npm deps into ${tmpDir}...`);
   const installArgs = [
     "install",
     "--no-package-lock",
     "--install-links=false",
-    targetWingSDKSpec,
-    targetWingCompilerSpec,
-    targetWingSpec,
-    targetWingConsoleAppSpec,
-    targetWingConsoleServerSpec,
-    targetWingConsoleDesignSystemSpec,
-    targetWingConsoleUiSpec,
+    ...tarballs,
   ];
   const installResult = await execa(npmBin, installArgs, {
     cwd: tmpDir,
