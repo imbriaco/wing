@@ -4,6 +4,10 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { npmBin, npmCacheDir, tmpDir, wingBin } from "./paths";
 
+// Tell the Wing Compiler to not use colors. See the following crate for more info:
+// https://docs.rs/crate/colored/latest
+process.env.NO_COLOR = "1";
+
 const shellEnv = {
   ...process.env,
   npm_config_audit: "false",
