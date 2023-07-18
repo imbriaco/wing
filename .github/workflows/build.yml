@@ -155,6 +155,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright
+        working-directory: apps/wing-console/console/app
         run: pnpm exec playwright install
 
       - name: Test
