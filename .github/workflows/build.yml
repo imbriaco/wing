@@ -154,6 +154,9 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright
+        run: pnpm playwright install
+
       - name: Test
         run: pnpm test
 
@@ -199,47 +202,94 @@ jobs:
       - name: Create Markdown report
         run: node scripts/benchmark_json_to_table.mjs
 
-  # e2e-test:
-  #   name: E2E Test
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - build
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-  #       with:
-  #         fetch-depth: 1
+  e2e-test:
+    name: "E2E / ${{ matrix.runner }} + Node${{ matrix.node }} [${{ matrix.shard }}]"
+    runs-on: "${{ matrix.runner }}-latest"
+    needs:
+      - build
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: [windows, macos, ubuntu]
+        node: ["18", "20"]
+        shard: ["1/2", "2/2"]
+        # full_run:
+        #   # Do a full run on push or when the PR is labeled "pr/e2e-full"
+        #   - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
+        exclude:
+          - runner: macos
+            full_run: false
+          - runner: windows
+            full_run: false
+          - runner: ubuntu
+            node: "20"
+            full_run: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
 
-  #     - name: Setup pnpm
-  #       uses: pnpm/action-setup@v2.2.4
-  #       with:
-  #         version: ${{ env.PNPM_VERSION }}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
-  #     - name: Setup Node
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         cache: "pnpm"
-  #         node-version: ${{ env.NODE_VERSION }}
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: "pnpm"
+          node-version: ${{ env.NODE_VERSION }}
 
-  #     - name: Download tarballs
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: tarballs
+      - name: Download Dist Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist
 
-  #     - name: Install dependencies
-  #       run: pnpm i --frozen-lockfile --filter hangar
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
 
-  #     - name: Starting the verdaccio registry
-  #       run: nohup pnpm verdaccio > nohup.out 2> nohup.err < /dev/null &
-  #       working-directory: tools/hangar
+      - name: Run Hangar Tests
+        working-directory: tools/hangar
+        run: |
+          pnpm test:generate
+          pnpm test --shard=${{ matrix.shard }} --update=${{ matrix.runner == 'ubuntu' && matrix.node == '18' }}
 
-  #     - name: Login to verdaccio registry
-  #       run: pnpm npm-auth-to-token -u test -p test -e test@test.com -r http://localhost:4873/
-  #       working-directory: tools/hangar
+      - name: Create mutation if needed
+        # we only care about the diff in our standard dev env
+        if: matrix.runner == 'ubuntu' && matrix.node == '18'
+        id: diff
+        env:
+          RAW_SHARD: ${{ matrix.shard }}
+        run: |
+          SHARD=$(echo $RAW_SHARD | sed 's/\//of/g')
+          DIFF_NAME="e2e-$SHARD.diff"
+          git add --all
+          git diff --staged --binary --patch > $DIFF_NAME
+          if [ -s $DIFF_NAME ]; then
+            echo "diff=true" >> $GITHUB_OUTPUT
+            echo "diff_name=$DIFF_NAME" >> $GITHUB_OUTPUT
+          fi
 
-  #     - name: Publish tarballs to verdaccio registry
-  #       run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --no-git-checks --access public ; done
-  #       working-directory: tools/hangar
+      - name: Upload mutation
+        if: matrix.runner == 'ubuntu' && matrix.node == '18' && steps.diff.outputs.diff == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.diff.outputs.diff_name }}
+          path: ${{ steps.diff.outputs.diff_name }}
+
+      # - name: Starting the verdaccio registry
+      #   run: nohup pnpm verdaccio > nohup.out 2> nohup.err < /dev/null &
+      #   working-directory: tools/hangar
+
+      # - name: Login to verdaccio registry
+      #   run: pnpm npm-auth-to-token -u test -p test -e test@test.com -r http://localhost:4873/
+      #   working-directory: tools/hangar
+
+      # - name: Publish tarballs to verdaccio registry
+      #   run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --no-git-checks --access public ; done
+      #   working-directory: tools/hangar
 
   # quality-gate:
   #   name: Quality Gate
