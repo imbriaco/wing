@@ -213,7 +213,8 @@ jobs:
       matrix:
         runner: [windows, macos, ubuntu]
         node: ["18", "20"]
-        shard: ["1/2", "2/2"]
+        # shard: ["1/2", "2/2"]
+        shard: ["1/4", "2/4", "3/4", "4/4"]
         full_run:
           # Do a full run on push or when the PR is labeled "pr/e2e-full"
           - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
