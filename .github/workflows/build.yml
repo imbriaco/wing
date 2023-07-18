@@ -156,7 +156,7 @@ jobs:
 
       - name: Install Playwright
         working-directory: apps/wing-console/console/app
-        run: pnpm exec playwright install
+        run: pnpm exec playwright install --with-deps
 
       - name: Test
         run: pnpm test
