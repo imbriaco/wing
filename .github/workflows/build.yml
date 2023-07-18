@@ -240,7 +240,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           cache: "pnpm"
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ matrix.node }}
 
       - name: Download Dist Artifacts
         uses: actions/download-artifact@v3
@@ -255,7 +255,7 @@ jobs:
         working-directory: tools/hangar
         run: |
           pnpm test:generate
-          pnpm test -- --shard=${{ matrix.shard }} --update=${{ matrix.runner == 'ubuntu' && matrix.node == '18' }}
+          pnpm run test --shard=${{ matrix.shard }} --update=${{ matrix.runner == 'ubuntu' && matrix.node == '18' }}
 
       - name: Create mutation if needed
         # we only care about the diff in our standard dev env
@@ -279,18 +279,6 @@ jobs:
         with:
           name: ${{ steps.diff.outputs.diff_name }}
           path: ${{ steps.diff.outputs.diff_name }}
-
-      # - name: Starting the verdaccio registry
-      #   run: nohup pnpm verdaccio > nohup.out 2> nohup.err < /dev/null &
-      #   working-directory: tools/hangar
-
-      # - name: Login to verdaccio registry
-      #   run: pnpm npm-auth-to-token -u test -p test -e test@test.com -r http://localhost:4873/
-      #   working-directory: tools/hangar
-
-      # - name: Publish tarballs to verdaccio registry
-      #   run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --no-git-checks --access public ; done
-      #   working-directory: tools/hangar
 
   quality-gate:
     name: Quality Gate
