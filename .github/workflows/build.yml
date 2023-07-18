@@ -213,9 +213,9 @@ jobs:
         runner: [windows, macos, ubuntu]
         node: ["18", "20"]
         shard: ["1/2", "2/2"]
-        # full_run:
-        #   # Do a full run on push or when the PR is labeled "pr/e2e-full"
-        #   - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
+        full_run:
+          # Do a full run on push or when the PR is labeled "pr/e2e-full"
+          - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
         exclude:
           - runner: macos
             full_run: false
