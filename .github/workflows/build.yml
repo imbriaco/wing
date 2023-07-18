@@ -214,17 +214,17 @@ jobs:
         runner: [windows, macos, ubuntu]
         node: ["18", "20"]
         shard: ["1/2", "2/2"]
-        # full_run:
-        #   # Do a full run on push or when the PR is labeled "pr/e2e-full"
-        #   - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
-        # exclude:
-        #   - runner: macos
-        #     full_run: false
-        #   - runner: windows
-        #     full_run: false
-        #   - runner: ubuntu
-        #     node: "20"
-        #     full_run: false
+        full_run:
+          # Do a full run on push or when the PR is labeled "pr/e2e-full"
+          - ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, '🧪 pr/e2e-full') }}
+        exclude:
+          - runner: macos
+            full_run: false
+          - runner: windows
+            full_run: false
+          - runner: ubuntu
+            node: "20"
+            full_run: false
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -292,30 +292,30 @@ jobs:
       #   run: for file in ../../dist/*.tgz ; do pnpm publish "$file" --no-git-checks --access public ; done
       #   working-directory: tools/hangar
 
-  # quality-gate:
-  #   name: Quality Gate
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - build
-  #     - e2e-test
-  #     - benchmark
-  #     - test
-  #   steps:
-  #     - name: Download patches
-  #       uses: actions/download-artifact@v3
-  #     - name: Check patches
-  #       run: |
-  #         PATCH_COUNT=0
-  #         for f in $(find ./*.diff/*.diff); do
-  #           PATCH_COUNT=$((PATCH_COUNT + 1))
-  #           cat $f
-  #         done
-  #         if [ $PATCH_COUNT -gt 0 ]; then
-  #           echo "Found $PATCH_COUNT patches, build failed. A self-mutation should happen soon."
-  #           exit 1
-  #         fi
-  #     - name: All good
-  #       run: echo "Builds and tests passed! 🎉🎉🎉"
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - e2e-test
+      - benchmark
+      - test
+    steps:
+      - name: Download patches
+        uses: actions/download-artifact@v3
+      - name: Check patches
+        run: |
+          PATCH_COUNT=0
+          for f in $(find ./*.diff/*.diff); do
+            PATCH_COUNT=$((PATCH_COUNT + 1))
+            cat $f
+          done
+          if [ $PATCH_COUNT -gt 0 ]; then
+            echo "Found $PATCH_COUNT patches, build failed. A self-mutation should happen soon."
+            exit 1
+          fi
+      - name: All good
+        run: echo "Builds and tests passed! 🎉🎉🎉"
 
   # publish:
   #   name: Publish
