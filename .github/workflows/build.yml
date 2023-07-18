@@ -249,7 +249,7 @@ jobs:
           path: dist
 
       - name: Install dependencies
-        run: pnpm i --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts --filter hangar --filter examples-valid --filter examples-invalid
 
       - name: Run Hangar Tests
         working-directory: tools/hangar
