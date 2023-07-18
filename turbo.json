@@ -20,7 +20,7 @@
       "inputs": ["src/**"]
     },
     "package": {
-      "dependsOn": ["compile"],
+      "dependsOn": ["compile", "post-compile"],
       "cache": false
     }
   }

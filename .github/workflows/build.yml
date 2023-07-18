@@ -76,18 +76,15 @@ jobs:
           GENERATE_VERSION: ${{ github.event_name != 'push' || github.repository != 'winglang/wing' }}
         run: pnpm changelog
 
-      - name: Build
-        run: pnpm build
+      - name: Build and Package
+        run: pnpm package --filter=!hangar
         env:
           SEGMENT_WRITE_KEY: ${{ secrets.SEGMENT_WRITE_KEY }}
 
-      - name: Package
-        run: pnpm package
-
-      - name: Upload tarballs
+      - name: Upload Dist Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: tarballs
+          name: dist
           path: dist/*.tgz
 
       - name: Check git diff of VSCode Extension
@@ -169,8 +166,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v2
+      - name: Download Dist Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2.2.4
